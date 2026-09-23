@@ -10,10 +10,12 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title="New Jeddah Motors API", version="1.0.0")
 
 cors_origins = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
+deployment_origin_regex = r"https://([a-z0-9-]+\.)?(vercel\.app|netlify\.app)$"
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
+    allow_origin_regex=deployment_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

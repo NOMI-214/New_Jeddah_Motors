@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     # DATABASE_URL to a Postgres connection string, e.g.:
     # postgresql://user:password@host:5432/dbname
     database_url: str = "sqlite:///./showroom.db"
-    cors_origins: str = "http://localhost:5173"
+    cors_origins: str = "http://localhost:5173,http://localhost:3000"
 
     # SMTP — used to email OTP codes for admin signup verification.
     # If smtp_host is left blank, OTPs are printed to the server console
