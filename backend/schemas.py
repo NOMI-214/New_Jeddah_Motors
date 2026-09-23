@@ -170,6 +170,65 @@ class CustomerOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# ─── Customer Accounts ───────────────────────────────────────────────────────
+
+class CustomerAccountCreate(BaseModel):
+    customer_id: int
+    direction: str  # receivable | payable
+    amount: float
+    description: str = ""
+    date: Optional[datetime] = None
+    due_date: Optional[datetime] = None
+    payment_method: str = "cash"
+    branch: str = "Islamabad"
+
+
+class CustomerAccountUpdate(BaseModel):
+    direction: Optional[str] = None
+    amount: Optional[float] = None
+    description: Optional[str] = None
+    date: Optional[datetime] = None
+    due_date: Optional[datetime] = None
+    payment_method: Optional[str] = None
+
+
+class CustomerAccountPaymentCreate(BaseModel):
+    amount: float
+    payment_method: str = "cash"
+    payment_date: Optional[datetime] = None
+    notes: str = ""
+
+
+class CustomerAccountPaymentOut(BaseModel):
+    id: int
+    amount: float
+    payment_method: str
+    payment_date: datetime
+    notes: str
+
+    model_config = {"from_attributes": True}
+
+
+class CustomerAccountOut(BaseModel):
+    id: int
+    customer_id: int
+    customer_name: str = ""
+    direction: str
+    amount: float
+    paid_amount: float
+    remaining_amount: float = 0.0
+    description: str
+    date: datetime
+    due_date: Optional[datetime]
+    payment_method: str
+    status: str = "unpaid"
+    branch: str
+    created_by: Optional[int]
+    payments: List[CustomerAccountPaymentOut] = []
+
+    model_config = {"from_attributes": True}
+
+
 # ─── Transaction ─────────────────────────────────────────────────────────────
 
 class TransactionCreate(BaseModel):
@@ -327,6 +386,9 @@ class DashboardStats(BaseModel):
     pending_installments: int
     outstanding_amount: float
     net_balance: float
+    accounts_receivable: float = 0.0
+    accounts_payable: float = 0.0
+    overdue_accounts: int = 0
 
 
 class ChangePasswordRequest(BaseModel):

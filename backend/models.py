@@ -70,6 +70,41 @@ class Customer(Base):
 
     sales = relationship("Sale", back_populates="customer")
     installments = relationship("Installment", back_populates="customer")
+    accounts = relationship("CustomerAccount", back_populates="customer", cascade="all, delete-orphan")
+
+
+class CustomerAccount(Base):
+    __tablename__ = "customer_accounts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False, index=True)
+    direction = Column(String(20), nullable=False)  # receivable | payable
+    amount = Column(Float, nullable=False)
+    paid_amount = Column(Float, default=0.0)
+    description = Column(Text, default="")
+    date = Column(DateTime, default=datetime.utcnow)
+    due_date = Column(DateTime, nullable=True)
+    payment_method = Column(String(50), default="cash")
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    branch = Column(String(100), default="Islamabad")
+    is_deleted = Column(Boolean, default=False)
+
+    customer = relationship("Customer", back_populates="accounts")
+    payments = relationship("CustomerAccountPayment", back_populates="account", cascade="all, delete-orphan")
+
+
+class CustomerAccountPayment(Base):
+    __tablename__ = "customer_account_payments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    account_id = Column(Integer, ForeignKey("customer_accounts.id"), nullable=False)
+    amount = Column(Float, nullable=False)
+    payment_method = Column(String(50), default="cash")
+    payment_date = Column(DateTime, default=datetime.utcnow)
+    notes = Column(Text, default="")
+    recorded_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    account = relationship("CustomerAccount", back_populates="payments")
 
 
 class Transaction(Base):

@@ -30,6 +30,17 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false))
   }, [])
 
+  useEffect(() => {
+    function syncAuth(event) {
+      if (event.key !== 'token' && event.key !== 'user') return
+      const storedUser = localStorage.getItem('user')
+      setUser(storedUser ? JSON.parse(storedUser) : null)
+    }
+
+    window.addEventListener('storage', syncAuth)
+    return () => window.removeEventListener('storage', syncAuth)
+  }, [])
+
   async function login(email, password) {
     const res = await client.post('/auth/login', { email, password })
     localStorage.setItem('token', res.data.access_token)

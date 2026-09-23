@@ -71,6 +71,24 @@ export default function Dashboard() {
           </div>
         </div>
       </Card>
+
+      <Card sheen className="p-5 animate-fadeInUp">
+        <h3 className="font-display text-lg font-semibold text-ink-900 mb-3">Customer Accounts</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <p className="text-xs text-ink-600/60">Due to showroom</p>
+            <p className="text-lg font-bold text-emerald-700">{money(stats.accounts_receivable)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-ink-600/60">Due from showroom</p>
+            <p className="text-lg font-bold text-rose-600">{money(stats.accounts_payable)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-ink-600/60">Overdue accounts</p>
+            <p className="text-lg font-bold text-ink-900">{stats.overdue_accounts}</p>
+          </div>
+        </div>
+      </Card>
     </div>
   )
 }

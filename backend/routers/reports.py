@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from datetime import datetime
 
 import models
 import schemas
@@ -50,6 +51,16 @@ def dashboard(db: Session = Depends(get_db), current_user: models.User = Depends
 
     net_balance = cash_in - cash_out - total_expenses
 
+    accounts = db.query(models.CustomerAccount).filter(models.CustomerAccount.is_deleted == False).all()
+    accounts_receivable = sum(max(account.amount - account.paid_amount, 0.0) for account in accounts if account.direction == "receivable")
+    accounts_payable = sum(max(account.amount - account.paid_amount, 0.0) for account in accounts if account.direction == "payable")
+    overdue_accounts = sum(
+        1 for account in accounts
+        if account.amount > account.paid_amount
+        and account.due_date is not None
+        and account.due_date < datetime.utcnow()
+    )
+
     return schemas.DashboardStats(
         total_cars=total_cars,
         available_cars=available_cars,
@@ -65,4 +76,7 @@ def dashboard(db: Session = Depends(get_db), current_user: models.User = Depends
         pending_installments=pending_installments,
         outstanding_amount=outstanding_amount,
         net_balance=net_balance,
+        accounts_receivable=accounts_receivable,
+        accounts_payable=accounts_payable,
+        overdue_accounts=overdue_accounts,
     )

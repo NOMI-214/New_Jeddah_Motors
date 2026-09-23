@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import client from '../api/client'
 import { Card, Button, Input, Modal, EmptyState, money } from '../components/ui'
 
 const EMPTY = { name: '', phone: '', cnic: '', email: '', address: '' }
 
 export default function Customers() {
+  const navigate = useNavigate()
   const [customers, setCustomers] = useState([])
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -91,6 +93,7 @@ export default function Customers() {
                 <td className="px-4 py-3 text-ink-600/70">{money(c.outstanding_amount)}</td>
                 <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
                   <button onClick={() => openEdit(c)} className="text-brand-700 text-xs font-semibold hover:underline">Edit</button>
+                  <button onClick={() => navigate(`/customer-accounts?customer_id=${c.id}`)} className="text-ink-600 text-xs font-medium hover:underline">Accounts</button>
                   <button onClick={() => handleDelete(c.id)} className="text-rose-500 text-xs font-medium">Delete</button>
                 </td>
               </tr>

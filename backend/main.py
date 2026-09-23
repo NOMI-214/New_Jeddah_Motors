@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base, settings
 import models  # noqa: F401 — ensure models are registered before create_all
 
-from routers import auth_router, cars, customers, transactions, expenses, sales, installments, users, audit_logs, reports
+from routers import auth_router, cars, customers, transactions, expenses, sales, installments, users, audit_logs, reports, customer_accounts
 
 Base.metadata.create_all(bind=engine)
 
@@ -31,6 +31,7 @@ app.include_router(installments.router)
 app.include_router(users.router)
 app.include_router(audit_logs.router)
 app.include_router(reports.router)
+app.include_router(customer_accounts.router)
 
 
 @app.get("/health")
