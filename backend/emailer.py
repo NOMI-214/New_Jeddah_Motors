@@ -1,4 +1,5 @@
 import smtplib
+import traceback
 from email.mime.text import MIMEText
 from database import settings
 
@@ -34,8 +35,10 @@ request this, you can safely ignore this email.
     msg["To"] = to_email
 
     with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=10) as server:
+        server.ehlo()
         if settings.smtp_use_tls:
             server.starttls()
+            server.ehlo()
         if settings.smtp_user:
             server.login(settings.smtp_user, settings.smtp_password)
-        server.sendmail(settings.from_email, [to_email], msg.as_string())
+        server.send_message(msg, from_addr=settings.from_email, to_addrs=[to_email])

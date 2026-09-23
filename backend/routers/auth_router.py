@@ -1,4 +1,5 @@
 import random
+import traceback
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -69,7 +70,9 @@ def signup_request_otp(payload: schemas.SignupRequest, db: Session = Depends(get
 
     try:
         send_otp_email(email, otp, name=payload.name)
-    except Exception:
+    except Exception as exc:
+        print(f"OTP email delivery failed for {email}: {exc}")
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail="Could not send verification email. Check SMTP settings and try again.")
 
     return {"message": f"A verification code was sent to {email}", "expires_in_minutes": settings.otp_expire_minutes}
