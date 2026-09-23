@@ -15,17 +15,8 @@ export default function Login() {
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
-    if (user) {
-      navigate('/', { replace: true })
-      return
-    }
     client
       .get('/auth/setup-status')
-      .then((res) => {
-        if (res.data.needs_setup) {
-          navigate('/signup', { replace: true })
-        }
-      })
       .finally(() => setChecking(false))
   }, [])
 
@@ -35,7 +26,7 @@ export default function Login() {
     setLoading(true)
     try {
       await login(email, password)
-      const dest = location.state?.from || '/'
+      const dest = location.state?.from || '/dashboard'
       navigate(dest, { replace: true })
     } catch (err) {
       setError(err.response?.data?.detail || 'Login failed. Check your credentials.')

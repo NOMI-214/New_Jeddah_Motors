@@ -24,22 +24,28 @@ def _generate_otp() -> str:
     return f"{random.randint(0, 999999):06d}"
 
 
-def _any_active_user_exists(db: Session) -> bool:
-    return db.query(models.User).filter(models.User.is_deleted == False).first() is not None
+def _owner_exists_for_branch(db: Session, branch: str) -> bool:
+    return (
+        db.query(models.User)
+        .filter(
+            models.User.role == "owner",
+            models.User.branch == branch,
+            models.User.is_deleted == False,
+        )
+        .first()
+        is not None
+    )
 
 
 @router.get("/setup-status", response_model=schemas.SetupStatus)
 def setup_status(db: Session = Depends(get_db)):
     """Tells the frontend whether the very first admin account still needs
     to be created. Once one exists, public signup is locked."""
-    return {"needs_setup": not _any_active_user_exists(db)}
+    return {"needs_setup": db.query(models.User).filter(models.User.is_deleted == False).first() is None}
 
 
 @router.post("/signup/request-otp")
 def signup_request_otp(payload: schemas.SignupRequest, db: Session = Depends(get_db)):
-    if _any_active_user_exists(db):
-        raise HTTPException(status_code=403, detail="Setup already completed. Please log in instead.")
-
     email = payload.email.lower().strip()
     if "@" not in email or "." not in email.split("@")[-1]:
         raise HTTPException(status_code=400, detail="Please enter a valid email address")
@@ -48,6 +54,8 @@ def signup_request_otp(payload: schemas.SignupRequest, db: Session = Depends(get
     branch = payload.branch.strip()
     if not branch:
         raise HTTPException(status_code=400, detail="Please select a branch")
+    if _owner_exists_for_branch(db, branch):
+        raise HTTPException(status_code=403, detail="This branch already has an owner. Please log in instead.")
 
     # Clear any previous pending OTPs for this email
     db.query(models.EmailOTP).filter(
@@ -80,9 +88,6 @@ def signup_request_otp(payload: schemas.SignupRequest, db: Session = Depends(get
 
 @router.post("/signup/resend-otp")
 def signup_resend_otp(payload: schemas.ResendOTP, db: Session = Depends(get_db)):
-    if _any_active_user_exists(db):
-        raise HTTPException(status_code=403, detail="Setup already completed. Please log in instead.")
-
     email = payload.email.lower().strip()
     record = (
         db.query(models.EmailOTP)
@@ -134,10 +139,10 @@ def signup_verify_otp(payload: schemas.OTPVerify, db: Session = Depends(get_db))
         raise HTTPException(status_code=400, detail="Incorrect code. Please try again.")
 
     # Double-check no one else completed setup in the meantime (race condition)
-    if _any_active_user_exists(db):
-        raise HTTPException(status_code=403, detail="Setup already completed. Please log in instead.")
-
     from datetime import date as _date
+
+    if _owner_exists_for_branch(db, record.pending_branch):
+        raise HTTPException(status_code=403, detail="This branch already has an owner. Please log in instead.")
 
     user = models.User(
         name=record.pending_name,

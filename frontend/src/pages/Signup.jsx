@@ -20,21 +20,7 @@ export default function Signup() {
   const [cooldown, setCooldown] = useState(0)
   const otpRefs = useRef([])
 
-  useEffect(() => {
-    if (user) {
-      navigate('/', { replace: true })
-      return
-    }
-    client
-      .get('/auth/setup-status')
-      .then((res) => {
-        if (!res.data.needs_setup) {
-          // Admin already exists — signup is locked, send them to login.
-          navigate('/login', { replace: true })
-        }
-      })
-      .finally(() => setChecking(false))
-  }, [])
+  useEffect(() => setChecking(false), [])
 
   useEffect(() => {
     if (cooldown <= 0) return
@@ -115,7 +101,7 @@ export default function Signup() {
         otp: code,
       })
       completeSignup(res.data)
-      navigate('/', { replace: true })
+      navigate('/dashboard', { replace: true })
     } catch (err) {
       setError(err.response?.data?.detail || 'Verification failed. Please try again.')
     } finally {

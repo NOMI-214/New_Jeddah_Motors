@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const NAV = [
-  { to: '/', label: 'Dashboard', icon: '📊', roles: null },
+  { to: '/dashboard', label: 'Dashboard', icon: '📊', roles: null },
   { to: '/cars', label: 'Cars', icon: '🚗', roles: null },
   { to: '/customers', label: 'Customers', icon: '👥', roles: null },
   { to: '/customer-accounts', label: 'Customer Accounts', icon: '📒', roles: null },
@@ -33,7 +33,7 @@ export default function Layout({ children }) {
 
   const visibleNav = NAV.filter((item) => !item.roles || item.roles.includes(user?.role))
   const currentLabel = visibleNav.find((item) =>
-    item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
+    location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)
   )?.label
 
   return (
@@ -73,7 +73,7 @@ export default function Layout({ children }) {
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {visibleNav.map((item) => {
-            const isActive = item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
+            const isActive = location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)
             return (
               <NavLink
                 key={item.to}
