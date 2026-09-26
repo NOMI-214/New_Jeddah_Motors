@@ -114,9 +114,6 @@ def signup_resend_otp(payload: schemas.ResendOTP, db: Session = Depends(get_db))
 
 @router.post("/signup/verify-otp", response_model=schemas.TokenResponse)
 def signup_verify_otp(payload: schemas.OTPVerify, db: Session = Depends(get_db)):
-    if _any_active_user_exists(db):
-        raise HTTPException(status_code=403, detail="Setup already completed. Please log in instead.")
-
     email = payload.email.lower().strip()
     record = (
         db.query(models.EmailOTP)
