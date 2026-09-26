@@ -4,6 +4,7 @@ import client from '../api/client'
 import { StatCard, Card, EmptyState, money } from '../components/ui'
 import { useCountUp } from '../components/useCountUp'
 import { useAuth } from '../context/AuthContext'
+import PageLoader from '../components/PageLoader'
 
 function AnimatedStat({ label, value, icon, tone, delay, format }) {
   const animated = useCountUp(value)
@@ -42,7 +43,7 @@ export default function Dashboard() {
   }, [canViewStaff])
 
   if (error) return <p className="text-rose-600">{error}</p>
-  if (!stats) return <p className="text-ink-600/50 animate-pulse">Loading dashboard…</p>
+  if (!stats) return <PageLoader label="Loading dashboard" />
 
   return (
     <div className="space-y-6">

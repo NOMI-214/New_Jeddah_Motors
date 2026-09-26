@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import client from '../api/client'
 import { Button } from '../components/ui'
+import PageLoader from '../components/PageLoader'
 
 export default function Login() {
   const { login, user } = useAuth()
@@ -36,7 +37,7 @@ export default function Login() {
   }
 
   if (checking) {
-    return <div className="min-h-screen bg-ink-900 flex items-center justify-center text-white/40">Loading…</div>
+    return <PageLoader fullScreen />
   }
 
   return (

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import client from '../api/client'
 import { Badge, Button, Card, money } from '../components/ui'
+import PageLoader from '../components/PageLoader'
 
 function Detail({ label, value }) {
   return (
@@ -28,7 +29,7 @@ export default function UserDetails() {
   }, [userId])
 
   if (error) return <p className="text-rose-600">{error}</p>
-  if (!user) return <p className="text-ink-600/50 animate-pulse">Loading staff profile…</p>
+  if (!user) return <PageLoader label="Loading staff profile" />
 
   return (
     <div className="space-y-5">

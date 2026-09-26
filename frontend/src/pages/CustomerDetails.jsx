@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import client from '../api/client'
 import { Badge, Button, Card, money } from '../components/ui'
+import PageLoader from '../components/PageLoader'
 
 const STATUS_TONE = { unpaid: 'red', partially_paid: 'amber', paid: 'green', overdue: 'red' }
 
@@ -39,7 +40,7 @@ export default function CustomerDetails() {
   }, [customerId])
 
   if (error) return <p className="text-rose-600">{error}</p>
-  if (!customer) return <p className="text-ink-600/50 animate-pulse">Loading customer…</p>
+  if (!customer) return <PageLoader label="Loading customer profile" />
 
   const receivable = accounts.filter((account) => account.direction === 'receivable').reduce((sum, account) => sum + account.remaining_amount, 0)
   const payable = accounts.filter((account) => account.direction === 'payable').reduce((sum, account) => sum + account.remaining_amount, 0)
