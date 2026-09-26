@@ -37,6 +37,8 @@ is_sqlite = settings.database_url.startswith("sqlite")
 db_url = settings.database_url
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
+if db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 engine = create_engine(
     db_url,
