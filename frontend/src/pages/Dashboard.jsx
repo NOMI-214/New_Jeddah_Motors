@@ -70,7 +70,7 @@ export default function Dashboard() {
         <AnimatedStat label="Cash In" value={stats.cash_in} icon="⬆️" tone="green" delay={0} format={money} />
         <AnimatedStat label="Cash Out" value={stats.cash_out} icon="⬇️" tone="red" delay={60} format={money} />
         <AnimatedStat label="Total Expenses" value={stats.total_expenses} icon="🧾" tone="amber" delay={120} format={money} />
-        <AnimatedStat label="Net Balance" value={stats.net_balance} icon="🏦" tone="brand" delay={180} format={money} />
+        <AnimatedStat label="Cash Balance" value={stats.net_balance} icon="🏦" tone="brand" delay={180} format={money} />
       </div>
 
       <Card sheen className="p-5 animate-fadeInUp">
@@ -163,7 +163,12 @@ export default function Dashboard() {
             <p className="text-xs text-ink-600/60">Overdue accounts</p>
             <p className="text-lg font-bold text-ink-900">{stats.overdue_accounts}</p>
           </div>
+          <div>
+            <p className="text-xs text-ink-600/60">Estimated net position</p>
+            <p className="text-lg font-bold text-ink-900">{money(stats.net_position)}</p>
+          </div>
         </div>
+        <p className="mt-3 text-xs text-ink-600/50">Cash balance + customer receivables + unpaid installments − showroom payables. Account entries change this estimate; only recorded payments change cash.</p>
       </Card>
     </div>
   )

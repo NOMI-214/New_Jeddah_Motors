@@ -65,6 +65,7 @@ export default function Transactions() {
               <th className="px-4 py-3">Amount</th>
               <th className="px-4 py-3">Party</th>
               <th className="px-4 py-3">Category</th>
+              <th className="px-4 py-3">Notes / Reference</th>
               <th className="px-4 py-3">Recorded By</th>
               <th className="px-4 py-3">Date</th>
               <th className="px-4 py-3"></th>
@@ -79,10 +80,13 @@ export default function Transactions() {
                 <td className="px-4 py-3 font-medium text-ink-900">{money(t.amount)}</td>
                 <td className="px-4 py-3 text-ink-600/70">{t.party || '—'}</td>
                 <td className="px-4 py-3 text-ink-600/70">{t.category || '—'}</td>
+                <td className="px-4 py-3 text-xs text-ink-600/70">{t.notes || '—'}</td>
                 <td className="px-4 py-3 text-ink-600/70">{t.creator_name}</td>
                 <td className="px-4 py-3 text-ink-600/50 text-xs">{new Date(t.date).toLocaleDateString()}</td>
                 <td className="px-4 py-3 text-right">
-                  <button onClick={() => handleDelete(t.id)} className="text-rose-500 text-xs font-medium">Delete</button>
+                  {t.category === 'Customer Account Payment'
+                    ? <span className="text-xs text-ink-600/50">Account-linked</span>
+                    : <button onClick={() => handleDelete(t.id)} className="text-rose-500 text-xs font-medium">Delete</button>}
                 </td>
               </tr>
             ))}

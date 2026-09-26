@@ -205,6 +205,8 @@ class CustomerAccountPaymentOut(BaseModel):
     payment_method: str
     payment_date: datetime
     notes: str
+    recorded_by: Optional[int] = None
+    recorded_by_name: str = ""
 
     model_config = {"from_attributes": True}
 
@@ -223,7 +225,8 @@ class CustomerAccountOut(BaseModel):
     payment_method: str
     status: str = "unpaid"
     branch: str
-    created_by: Optional[int]
+    created_by: Optional[int] = None
+    created_by_name: str = ""
     payments: List[CustomerAccountPaymentOut] = []
 
     model_config = {"from_attributes": True}
@@ -386,6 +389,7 @@ class DashboardStats(BaseModel):
     pending_installments: int
     outstanding_amount: float
     net_balance: float
+    net_position: float = 0.0
     accounts_receivable: float = 0.0
     accounts_payable: float = 0.0
     overdue_accounts: int = 0

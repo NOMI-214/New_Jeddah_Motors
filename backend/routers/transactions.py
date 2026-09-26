@@ -55,6 +55,11 @@ def delete_transaction(
     txn = db.query(models.Transaction).filter(models.Transaction.id == txn_id).first()
     if not txn:
         raise HTTPException(status_code=404, detail="Transaction not found")
+    if txn.category == "Customer Account Payment":
+        raise HTTPException(
+            status_code=400,
+            detail="This entry is linked to a customer account payment and cannot be deleted from the cash ledger.",
+        )
     db.delete(txn)
     add_audit_log(db, current_user.id, "delete", "transactions", f"Deleted transaction #{txn_id}", "delete")
     db.commit()

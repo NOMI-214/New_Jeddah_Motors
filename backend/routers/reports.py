@@ -60,6 +60,7 @@ def dashboard(db: Session = Depends(get_db), current_user: models.User = Depends
         and account.due_date is not None
         and account.due_date < datetime.utcnow()
     )
+    net_position = net_balance + outstanding_amount + accounts_receivable - accounts_payable
 
     return schemas.DashboardStats(
         total_cars=total_cars,
@@ -76,6 +77,7 @@ def dashboard(db: Session = Depends(get_db), current_user: models.User = Depends
         pending_installments=pending_installments,
         outstanding_amount=outstanding_amount,
         net_balance=net_balance,
+        net_position=net_position,
         accounts_receivable=accounts_receivable,
         accounts_payable=accounts_payable,
         overdue_accounts=overdue_accounts,

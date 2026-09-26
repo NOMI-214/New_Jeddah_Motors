@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import client from '../api/client'
 import { Badge, Button, Card, EmptyState, Input, Modal, Select, money } from '../components/ui'
@@ -28,6 +28,7 @@ export default function CustomerAccounts() {
   const selectedCustomerId = searchParams.get('customer_id') || ''
   const [accounts, setAccounts] = useState([])
   const [customers, setCustomers] = useState([])
+  const [expandedAccountId, setExpandedAccountId] = useState(null)
   const [accountModal, setAccountModal] = useState(false)
   const [paymentModal, setPaymentModal] = useState(false)
   const [activeAccount, setActiveAccount] = useState(null)
@@ -110,9 +111,13 @@ export default function CustomerAccounts() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="font-display text-3xl font-bold text-ink-900 animate-fadeInUp">Customer Accounts</h2>
-          <p className="text-sm text-ink-600/60">Track balances due to and from the showroom</p>
+          <p className="text-sm text-ink-600/60">Track what customers owe and what the showroom owes them</p>
         </div>
         {canManage && <Button onClick={openCreate}>+ Add Account</Button>}
+      </div>
+
+      <div className="border-l-4 border-brand-400 bg-brand-50/70 px-4 py-3 text-sm text-ink-700">
+        Account balances are amounts still owed, not cash on hand. Recording a payment updates the balance and automatically posts the cash movement to Transactions.
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -134,6 +139,7 @@ export default function CustomerAccounts() {
               <th className="px-4 py-3">Direction</th>
               <th className="px-4 py-3">Reason</th>
               <th className="px-4 py-3">Original</th>
+              <th className="px-4 py-3">Paid</th>
               <th className="px-4 py-3">Remaining</th>
               <th className="px-4 py-3">Due date</th>
               <th className="px-4 py-3">Status</th>
@@ -142,6 +148,7 @@ export default function CustomerAccounts() {
           </thead>
           <tbody>
             {accounts.map((account) => (
+              <Fragment key={account.id}>
               <tr key={account.id} className="border-t border-ink-900/5 hover:bg-brand-50/30 transition-colors">
                 <td className="px-4 py-3 font-medium text-ink-900">{account.customer_name}</td>
                 <td className={`px-4 py-3 text-xs font-semibold ${account.direction === 'receivable' ? 'text-emerald-700' : 'text-rose-600'}`}>
@@ -149,16 +156,41 @@ export default function CustomerAccounts() {
                 </td>
                 <td className="px-4 py-3 text-ink-600/70">{account.description || '—'}</td>
                 <td className="px-4 py-3 text-ink-600/70">{money(account.amount)}</td>
+                <td className="px-4 py-3 text-ink-600/70">{money(account.paid_amount)}</td>
                 <td className="px-4 py-3 font-semibold text-ink-900">{money(account.remaining_amount)}</td>
                 <td className="px-4 py-3 text-xs text-ink-600/60">{account.due_date ? new Date(account.due_date).toLocaleDateString() : '—'}</td>
                 <td className="px-4 py-3"><Badge tone={STATUS_TONE[account.status]}>{account.status.replace('_', ' ')}</Badge></td>
                 {canManage && (
                   <td className="px-4 py-3 text-right whitespace-nowrap space-x-2">
                     {account.remaining_amount > 0 && <button onClick={() => openPayment(account)} className="text-brand-700 text-xs font-semibold hover:underline">Record payment</button>}
-                    <button onClick={() => deleteAccount(account.id)} className="text-rose-500 text-xs font-medium">Delete</button>
+                    <button onClick={() => setExpandedAccountId(expandedAccountId === account.id ? null : account.id)} className="text-ink-600 text-xs font-medium hover:underline">{expandedAccountId === account.id ? 'Hide history' : `History (${account.payments.length})`}</button>
+                    <button onClick={() => deleteAccount(account.id)} className="text-rose-500 text-xs font-medium">Archive</button>
                   </td>
                 )}
               </tr>
+              {expandedAccountId === account.id && (
+                <tr className="border-t border-ink-900/5 bg-ink-900/[0.02]">
+                  <td colSpan={canManage ? 9 : 8} className="px-5 py-4">
+                    <div className="space-y-3">
+                      <p className="text-xs text-ink-600/60">Account #{account.id} created {new Date(account.date).toLocaleString()} by {account.created_by_name || 'unknown user'}</p>
+                      {account.payments.length ? (
+                        <div className="divide-y divide-ink-900/10">
+                          {account.payments.map((payment) => (
+                            <div key={payment.id} className="grid grid-cols-1 gap-1 py-3 text-sm sm:grid-cols-5 sm:items-start sm:gap-3">
+                              <span className="font-semibold text-ink-900">Payment #{payment.id}: {money(payment.amount)}</span>
+                              <span className="text-ink-600/70">{new Date(payment.payment_date).toLocaleString()}</span>
+                              <span className="capitalize text-ink-600/70">{payment.payment_method.replace('_', ' ')}</span>
+                              <span className="text-ink-600/70">Recorded by {payment.recorded_by_name || 'unknown user'}</span>
+                              <span className="text-ink-600/70">{payment.notes || 'No notes'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : <p className="text-sm text-ink-600/60">No payments recorded yet.</p>}
+                    </div>
+                  </td>
+                </tr>
+              )}
+              </Fragment>
             ))}
           </tbody>
         </table>
@@ -181,7 +213,7 @@ export default function CustomerAccounts() {
             <Input label="Date" type="date" required value={accountForm.date} onChange={(e) => setAccountForm({ ...accountForm, date: e.target.value })} />
             <Input label="Due date" type="date" value={accountForm.due_date} onChange={(e) => setAccountForm({ ...accountForm, due_date: e.target.value })} />
           </div>
-          <Select label="Payment method" value={accountForm.payment_method} onChange={(e) => setAccountForm({ ...accountForm, payment_method: e.target.value })}>
+          <Select label="Preferred payment method" value={accountForm.payment_method} onChange={(e) => setAccountForm({ ...accountForm, payment_method: e.target.value })}>
             <option value="cash">Cash</option><option value="bank_transfer">Bank transfer</option><option value="cheque">Cheque</option><option value="other">Other</option>
           </Select>
           {error && <p className="text-sm text-rose-600">{error}</p>}

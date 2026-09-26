@@ -25,11 +25,19 @@ def _status(account: models.CustomerAccount) -> str:
     return "unpaid"
 
 
-def _to_out(account: models.CustomerAccount) -> schemas.CustomerAccountOut:
+def _to_out(account: models.CustomerAccount, db: Session) -> schemas.CustomerAccountOut:
     result = schemas.CustomerAccountOut.model_validate(account)
     result.customer_name = account.customer.name if account.customer else ""
     result.remaining_amount = max(account.amount - account.paid_amount, 0.0)
     result.status = _status(account)
+    creator = db.query(models.User).filter(models.User.id == account.created_by).first() if account.created_by else None
+    result.created_by_name = creator.name if creator else ""
+    result.payments = []
+    for payment in sorted(account.payments, key=lambda item: (item.payment_date, item.id)):
+        payment_out = schemas.CustomerAccountPaymentOut.model_validate(payment)
+        recorder = db.query(models.User).filter(models.User.id == payment.recorded_by).first() if payment.recorded_by else None
+        payment_out.recorded_by_name = recorder.name if recorder else ""
+        result.payments.append(payment_out)
     return result
 
 
@@ -70,7 +78,7 @@ def list_accounts(
     if customer_id:
         query = query.filter(models.CustomerAccount.customer_id == customer_id)
     accounts = query.order_by(models.CustomerAccount.id.desc()).all()
-    results = [_to_out(account) for account in accounts]
+    results = [_to_out(account, db) for account in accounts]
     if status:
         results = [account for account in results if account.status == status]
     return results
@@ -89,7 +97,7 @@ def list_customer_accounts(
     )
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
-    return [_to_out(account) for account in customer.accounts if not account.is_deleted]
+    return [_to_out(account, db) for account in customer.accounts if not account.is_deleted]
 
 
 @router.post("", response_model=schemas.CustomerAccountOut)
@@ -102,10 +110,17 @@ def create_account(
     account = models.CustomerAccount(**payload.model_dump(), created_by=current_user.id)
     db.add(account)
     db.flush()
-    add_audit_log(db, current_user.id, "create", "customer_accounts", f"Added account for customer {account.customer_id}")
+    add_audit_log(
+        db,
+        current_user.id,
+        "create",
+        "customer_accounts",
+        f"Created {account.direction} account #{account.id} for {account.customer.name}: "
+        f"{account.amount:.2f}; due {account.due_date or 'not set'}; {account.description}",
+    )
     db.commit()
     db.refresh(account)
-    return _to_out(account)
+    return _to_out(account, db)
 
 
 @router.put("/{account_id}", response_model=schemas.CustomerAccountOut)
@@ -125,10 +140,17 @@ def update_account(
         raise HTTPException(status_code=400, detail="Amount cannot be less than payments already recorded")
     for field, value in changes.items():
         setattr(account, field, value)
-    add_audit_log(db, current_user.id, "update", "customer_accounts", f"Updated account {account.id}")
+    add_audit_log(
+        db,
+        current_user.id,
+        "update",
+        "customer_accounts",
+        f"Updated account #{account.id} for {account.customer.name}: "
+        f"{', '.join(f'{key}={value}' for key, value in changes.items())}",
+    )
     db.commit()
     db.refresh(account)
-    return _to_out(account)
+    return _to_out(account, db)
 
 
 @router.post("/{account_id}/payments", response_model=schemas.CustomerAccountOut)
@@ -154,10 +176,37 @@ def record_payment(
     )
     account.paid_amount += payload.amount
     db.add(payment)
-    add_audit_log(db, current_user.id, "update", "customer_accounts", f"Recorded payment for account {account.id}", "update")
+    db.flush()
+
+    transaction_type = "cashIn" if account.direction == "receivable" else "cashOut"
+    direction_label = "received from" if transaction_type == "cashIn" else "paid to"
+    db.add(
+        models.Transaction(
+            type=transaction_type,
+            amount=payload.amount,
+            party=account.customer.name,
+            category="Customer Account Payment",
+            notes=(
+                f"Account #{account.id} payment #{payment.id}; {direction_label} customer; "
+                f"method: {payload.payment_method}; {payload.notes}".strip()
+            ),
+            date=payment.payment_date,
+            customer_id=account.customer_id,
+            created_by=current_user.id,
+            branch=account.branch,
+        )
+    )
+    add_audit_log(
+        db,
+        current_user.id,
+        "create",
+        "customer_accounts",
+        f"Recorded payment #{payment.id} of {payload.amount:.2f} for account #{account.id} "
+        f"({transaction_type}, {payload.payment_method})",
+    )
     db.commit()
     db.refresh(account)
-    return _to_out(account)
+    return _to_out(account, db)
 
 
 @router.delete("/{account_id}")
@@ -168,6 +217,15 @@ def delete_account(
 ):
     account = _get_account(account_id, db)
     account.is_deleted = True
-    add_audit_log(db, current_user.id, "delete", "customer_accounts", f"Deleted account {account.id}", "delete")
+    add_audit_log(
+        db,
+        current_user.id,
+        "delete",
+        "customer_accounts",
+        f"Archived account #{account.id} for {account.customer.name}; "
+        f"original {account.amount:.2f}, paid {account.paid_amount:.2f}, "
+        f"remaining {max(account.amount - account.paid_amount, 0.0):.2f}",
+        "delete",
+    )
     db.commit()
     return {"message": "Customer account deleted"}
