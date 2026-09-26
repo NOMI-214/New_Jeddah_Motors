@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import client from '../api/client'
-import { StatCard, Card, money } from '../components/ui'
+import { StatCard, Card, EmptyState, money } from '../components/ui'
 import { useCountUp } from '../components/useCountUp'
+import { useAuth } from '../context/AuthContext'
 
 function AnimatedStat({ label, value, icon, tone, delay, format }) {
   const animated = useCountUp(value)
@@ -17,8 +19,13 @@ function AnimatedStat({ label, value, icon, tone, delay, format }) {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const [stats, setStats] = useState(null)
+  const [customers, setCustomers] = useState([])
+  const [staff, setStaff] = useState([])
   const [error, setError] = useState('')
+  const canViewStaff = ['owner', 'manager'].includes(user?.role)
 
   useEffect(() => {
     client
@@ -26,6 +33,13 @@ export default function Dashboard() {
       .then((res) => setStats(res.data))
       .catch(() => setError('Could not load dashboard stats'))
   }, [])
+
+  useEffect(() => {
+    client.get('/customers').then((res) => setCustomers(res.data.slice(0, 6))).catch(() => {})
+    if (canViewStaff) {
+      client.get('/users').then((res) => setStaff(res.data.slice(0, 6))).catch(() => {})
+    }
+  }, [canViewStaff])
 
   if (error) return <p className="text-rose-600">{error}</p>
   if (!stats) return <p className="text-ink-600/50 animate-pulse">Loading dashboard…</p>
@@ -71,6 +85,67 @@ export default function Dashboard() {
           </div>
         </div>
       </Card>
+
+      <div className={`grid grid-cols-1 ${canViewStaff ? 'lg:grid-cols-2' : ''} gap-5`}>
+        <Card sheen className="p-5 animate-fadeInUp">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <h3 className="font-display text-lg font-semibold text-ink-900">Recent customers</h3>
+              <p className="text-xs text-ink-600/60">Select a customer to view their full profile</p>
+            </div>
+            <button onClick={() => navigate('/customers')} className="text-xs font-semibold text-brand-700 hover:underline">All customers</button>
+          </div>
+          {customers.length ? (
+            <div className="divide-y divide-ink-900/5">
+              {customers.map((customer) => (
+                <button
+                  key={customer.id}
+                  onClick={() => navigate(`/customers/${customer.id}`)}
+                  className="flex w-full items-center justify-between gap-3 py-3 text-left hover:bg-brand-50/50 px-2 rounded-md transition"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold text-ink-900">{customer.name}</span>
+                    <span className="block truncate text-xs text-ink-600/60">{customer.phone || customer.email || customer.branch}</span>
+                  </span>
+                  <span className="shrink-0 text-xs text-ink-600/60">{customer.cars_purchased} purchases</span>
+                </button>
+              ))}
+            </div>
+          ) : <EmptyState text="No customers to show." />}
+        </Card>
+
+        {canViewStaff && (
+          <Card sheen className="p-5 animate-fadeInUp">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div>
+                <h3 className="font-display text-lg font-semibold text-ink-900">Staff users</h3>
+                <p className="text-xs text-ink-600/60">Select a staff member to view their profile and sales</p>
+              </div>
+              <button onClick={() => navigate('/users')} className="text-xs font-semibold text-brand-700 hover:underline">All staff</button>
+            </div>
+            {staff.length ? (
+              <div className="divide-y divide-ink-900/5">
+                {staff.map((member) => (
+                  <button
+                    key={member.id}
+                    onClick={() => navigate(`/users/${member.id}`)}
+                    className="flex w-full items-center justify-between gap-3 py-3 text-left hover:bg-brand-50/50 px-2 rounded-md transition"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-ink-900">{member.name}</span>
+                      <span className="block truncate text-xs text-ink-600/60">{member.email}</span>
+                    </span>
+                    <span className="shrink-0 text-right">
+                      <span className="block text-xs capitalize text-ink-600/70">{member.role}</span>
+                      <span className="block text-[11px] text-ink-600/50">{member.branch}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : <EmptyState text="No staff users to show." />}
+          </Card>
+        )}
+      </div>
 
       <Card sheen className="p-5 animate-fadeInUp">
         <h3 className="font-display text-lg font-semibold text-ink-900 mb-3">Customer Accounts</h3>

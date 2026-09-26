@@ -18,6 +18,18 @@ def list_users(
     return db.query(models.User).filter(models.User.is_deleted == False).order_by(models.User.id.desc()).all()
 
 
+@router.get("/{user_id}", response_model=schemas.UserOut)
+def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_roles("owner", "manager")),
+):
+    user = db.query(models.User).filter(models.User.id == user_id, models.User.is_deleted == False).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
 @router.post("", response_model=schemas.UserOut)
 def create_user(
     payload: schemas.UserCreate,
