@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import client from '../api/client'
 import { StatCard, Card, EmptyState, money } from '../components/ui'
 import { useCountUp } from '../components/useCountUp'
 import { useAuth } from '../context/AuthContext'
 import PageLoader from '../components/PageLoader'
+
+const DashboardTrends = lazy(() => import('../components/DashboardTrends'))
 
 function AnimatedStat({ label, value, icon, tone, delay, format }) {
   const animated = useCountUp(value)
@@ -58,6 +60,10 @@ export default function Dashboard() {
         <AnimatedStat label="Reserved" value={stats.reserved_cars} icon="⏳" tone="amber" delay={120} />
         <AnimatedStat label="Sold" value={stats.sold_cars} icon="🏁" tone="red" delay={180} />
       </div>
+
+      <Suspense fallback={<PageLoader label="Loading performance charts" />}>
+        <DashboardTrends />
+      </Suspense>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <AnimatedStat label="Total Customers" value={stats.total_customers} icon="👥" tone="brand" delay={0} />

@@ -395,6 +395,36 @@ class DashboardStats(BaseModel):
     overdue_accounts: int = 0
 
 
+class DashboardTrendPoint(BaseModel):
+    label: str
+    revenue: float
+    profit: float
+    expenses: float
+    cash_in: float
+    cash_out: float
+
+
+class DashboardTrendTotals(BaseModel):
+    revenue: float
+    profit: float
+    expenses: float
+    cash_in: float
+    cash_out: float
+    net_cash_change: float
+    previous_revenue: float
+    revenue_growth_percent: Optional[float] = None
+
+
+class DashboardTrend(BaseModel):
+    period: str
+    year: int
+    month: Optional[int] = None
+    start_date: datetime
+    end_date: datetime
+    totals: DashboardTrendTotals
+    series: List[DashboardTrendPoint]
+
+
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
